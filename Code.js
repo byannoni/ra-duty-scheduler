@@ -37,6 +37,8 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date, end_date, br
   var week_duties_remainder = 0;
   var weekend_duties_remainder = 0;
   var remaining_duties = 0;
+  var days = [];
+  var break_dates_set = !(isNaN(break_start.getTime()) || isNaN(break_end.getTime()));
 
   start_date = new Date(start_date);
   end_date = new Date(end_date);
@@ -74,7 +76,7 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date, end_date, br
   }
 
   // Check that the break is during semester
-  if((!isNaN(break_start.getTime())) && (!isNaN(break_end.getTime())) {
+  if(break_dates_set) {
     if(break_start.getTime() < start_date.getTime()
         || break_start.getTime() > end_date.getTime()
         || break_end.getTime() < start_date.getTime()
@@ -102,11 +104,18 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date, end_date, br
   Logger.log("Calculating how many duties should be given");
   // Calculate how many week and weekend duties are needed
   for(var date_iter = new Date(start_date); date_iter <= end_date; date_iter.setDate(date_iter.getDate() + 1)) {
+    // Skip days during the break
+    if(break_dates_set && date_iter >= break_start && date_iter <= break_end) {
+      continue;
+    }
+
     if(is_weekend(date_iter)) {
       ++weekend_duties;
     } else {
       ++week_duties;
     }
+
+    days.push(date_iter);
   }
 
   Logger.log((weekend_duties + week_duties) + " duties from " + start_date + " to " + end_date);
@@ -120,19 +129,19 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date, end_date, br
   Logger.log("Week duties: " + week_duties + " (" + week_duties_per_ra + " per RA with " + week_duties_remainder + " remaining)");  
   Logger.log("Assigning duties");
   // Assign RAs for each day
-  for(var date_iter = start_date; date_iter <= end_date; date_iter.setDate(date_iter.getDate() + 1)) {
+  for(var iter = 0; iter < days.length; ++iter) {
     var primary_ra = null;
     var secondary_ra = null;
 
-    Logger.log("Processing day " + date_iter);
+    Logger.log("Processing day " + days[iter]);
 
     do {
       // Select a random RA for primary
       primary_ra = ra_objects[Math.floor(Math.random() * ra_objects.length)];
 
-      Logger.log("Considering RA '" + primary_ra.name + "' for primary on " + date_iter);
+      Logger.log("Considering RA '" + primary_ra.name + "' for primary on " + days[iter]);
 
-      if(is_weekend(date_iter)) {
+      if(is_weekend(days[iter])) {
         if(primary_ra.weekend_primary_duties < weekend_duties_per_ra || (primary_ra.weekend_primary_duties == weekend_duties_per_ra && weekend_duties_remainder >= weekend_duties)) {
           ++primary_ra.weekend_primary_duties;
           break;
@@ -145,16 +154,16 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date, end_date, br
       }
     } while(true);
 
-    Logger.log("Selected RA '" + primary_ra.name + "' for primary on " + date_iter);
+    Logger.log("Selected RA '" + primary_ra.name + "' for primary on " + days[iter]);
 
     do {
       // Select a random RA for secondary
       secondary_ra = ra_objects[Math.floor(Math.random() * ra_objects.length)];
 
-      Logger.log("Considering RA '" + secondary_ra.name + "' for secondary on " + date_iter);
+      Logger.log("Considering RA '" + secondary_ra.name + "' for secondary on " + days[iter]);
 
       if(secondary_ra != primary_ra) {
-        if(is_weekend(date_iter)) {
+        if(is_weekend(days[iter])) {
           if(secondary_ra.weekend_secondary_duties < weekend_duties_per_ra || secondary_ra.weekend_secondary_duties == weekend_duties_per_ra && weekend_duties_remainder >= weekend_duties) {
             ++secondary_ra.weekend_secondary_duties;
             break;
@@ -168,11 +177,11 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date, end_date, br
       }
     } while(true);
 
-    Logger.log("Selected RA '" + secondary_ra.name + "' for secondary on " + date_iter);
+    Logger.log("Selected RA '" + secondary_ra.name + "' for secondary on " + days[iter]);
 
-    cal.createAllDayEvent(primary_ra.name + " / " + secondary_ra.name, date_iter);
+    cal.createAllDayEvent(primary_ra.name + " / " + secondary_ra.name, days[iter]);
 
-    if(is_weekend(date_iter))
+    if(is_weekend(days[iter]))
       --weekend_duties;
     else
       --week_duties;
