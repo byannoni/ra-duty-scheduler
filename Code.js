@@ -45,11 +45,45 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date, end_date, br
 
   Logger.log("Validating dates");
 
-  if(isNaN(start_date.getTime()) || isNaN(end_date.getTime()) || isNaN(break_start.getTime()) || isNaN(break_end.getTime())) {
+  if(isNaN(start_date.getTime()) || isNaN(end_date.getTime())) {
     return JSON.stringify({
       status : false,
       error : "One or more specified dates in invalid",
     });
+  }
+
+  if(isNaN(break_start.getTime()) != isNaN(break_end.getTime())) {
+    return JSON.stringify({
+      status : false,
+      error : "One of the break date was specified but the other was in invalid",
+    });
+  }
+
+  if(start_date.getTime() > end_date.getTime()) {
+    return JSON.stringify({
+      status : false,
+      error : "The semester start date is after the end date",
+    });
+  }
+
+  if(break_start.getTime() > break_end.getTime()) {
+    return JSON.stringify({
+      status : false,
+      error : "The break start date is after the end date",
+    });
+  }
+
+  // Check that the break is during semester
+  if((!isNaN(break_start.getTime())) && (!isNaN(break_end.getTime())) {
+    if(break_start.getTime() < start_date.getTime()
+        || break_start.getTime() > end_date.getTime()
+        || break_end.getTime() < start_date.getTime()
+        || break_end.getTime() > end_date.getTime()) {
+      return JSON.stringify({
+        status : false,
+        error : "The break is not between the start and end dates",
+      });
+    }
   }
 
   Logger.log("Checking calendar '" + calendar_name + "' exists");
