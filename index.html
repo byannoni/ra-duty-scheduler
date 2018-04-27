@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <title>RA Duty Generator</title>
+    <link href="https://fonts.googleapis.com/css?family=Rokkitt|Ubuntu" rel="stylesheet"> 
+    <style>
+    html {
+      -webkit-box-sizing: border-box;
+              box-sizing: border-box;
+    }
+    
+    body {
+      margin: 0;
+      padding: 1%;
+      background-color: #3498db;
+      color: #363638;
+      text-align: center;
+      font-family: 'Ubuntu', sans-serif;
+    }
+    
+    main {
+      width: 45%;
+      min-width: 250px;
+      -webkit-box-shadow: 0px 2px 6px #505055;
+              box-shadow: 0px 2px 6px #505055;
+      display: inline-block;
+      text-align: left;
+    }
+    
+    h1 {
+      font-size: 1.5em;
+      margin: 0;
+      font-family: 'Rokkitt';
+    }
+    
+    .header {
+      background-color: #f3f3f4;
+      padding: 15px 35px;
+    }
+    
+    form {
+      background-color: #fcfcfd;
+      padding: 35px;
+    }
+  
+    form div { margin-bottom: 30px; }
+    
+    label { display: block; }
+    
+    .check-label { display: inline; }
+    
+    .stretch { width: 100%; }
+    
+    .dates {
+      display: -webkit-box;
+      display: -ms-flexbox;
+      display: flex;
+      -webkit-box-pack: justify;
+          -ms-flex-pack: justify;
+              justify-content: space-between;
+      -ms-flex-wrap: wrap;
+          flex-wrap: wrap;
+    }
+    
+    .dates div {
+      -webkit-box-flex: 1;
+          -ms-flex: 1;
+              flex: 1;
+    }
+    
+    .firstdate { margin-right: 10%; }
+    
+    input#submit[type="button"] {
+      padding: 10px;
+      width: 100%;
+      background-color: #3498db;
+      color: #fefeff;
+      font-weight: bold;
+      border: none;
+      letter-spacing: 0.1em;
+      -webkit-transition: 0.2s all ease;
+      transition: 0.2s all ease;
+    }
+    
+    input#submit[type="button"]:hover {
+      cursor: pointer;
+      background-color: #2ecc71;
+      -webkit-transition: 0.2s all ease;
+      transition: 0.2s all ease;
+    }
+    
+    input[type="date"] { width: 100%; }
+    
+    input, textarea {
+      -webkit-box-sizing: border-box;
+              box-sizing: border-box;
+      padding: 5px 7px;
+      font-family: 'Ubuntu', sans-serif;
+    }
+    
+    textarea { resize: vertical; }
+    
+    .status {
+      display: none;
+      background-color: #c0392b;
+      color: #fffefe;
+      padding: 20px;
+      -webkit-transition: 0.1s all ease;
+      transition: 0.1s all ease;
+    }
+    
+    #err { background-color: #c0392b; }
+    #success { background-color: #39c02b; }
+    
+    @media (max-width: 1080px) {
+      main { width: 75%; }
+    }
+    @media (max-width: 550px) {
+      body { padding: 0; }
+      main {
+        width: 100%;
+        -webkit-box-shadow: none;
+                box-shadow: none;
+      }
+      .firstdate { margin-right: 0; }
+    }
+    
+    table, td, th { border: 1 px solid #000; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="header">
+        <h1>RA Duty Generator</h1>
+      </div>
+      <form>
+        <div>
+          <label>Calendar Name</label>
+          <input class="stretch" type=text id="calendarname" value="RA Test">
+        </div>
+      
+        <div>
+          <label style="vertical-align:top;">RAs to Schedule</label>
+          <textarea class="stretch" id="ralist" rows=24></textarea>
+        </div>
+      
+        <div class="dates">
+          <div class="firstdate">
+            <label>Start Date</label>
+            <input type=date id="startdate">
+          </div>
+        
+          <div>
+            <label>End Date</label>
+            <input type=date id="enddate">
+          </div>
+        </div>
+      
+        <div class="dates">
+          <div class="firstdate">
+            <label>Break Start</label>
+            <input type=date id="breakstart">
+          </div>
+        
+          <div>
+            <label>Break End</label>
+            <input type=date id="breakend">
+          </div>
+        </div>
+      
+        <!--<div>
+          <input type=checkbox id="powerweekends">
+          <label class="check-label">Schedule Power Weekends</label>
+        </div>-->
+      
+        <input id="submit" onclick="do_submit()" type="button" value="Schedule">
+        <div id="err" class="status"></div>
+        <div id="success" class="status">Each RA should receive about <span id="weekends"></span> weekend duties and <span id="weeks"></span> week duties.
+          <table>
+            <thead>
+              <tr>
+                <th>RA</th>
+                <th>Week Primary Duties (S-W)</th>
+                <th>Week Secondary Duties (S-W)</th>
+                <th>Weekend Primary Duties (T-S)</th>
+                <th>Weekend Secondary Duties (T-S)</th>
+              </tr>
+            </thead>
+            <tbody id="dutytable">
+            </tbody>
+          </table>
+        </div>
+      </form>
+    </main>
+  </body>
+  
+  <script>
+function do_submit()
+{
+  var e = document.getElementById('err');
+  var s = document.getElementById('success');
+  e.style.display = 'none';
+  s.style.display = 'none';
+
+  var calendar_name = document.getElementById('calendarname').value;
+  var ra_list = document.getElementById('ralist').value;
+  var start_date = document.getElementById('startdate').value;
+  var end_date = document.getElementById('enddate').value;
+  var break_start = document.getElementById('breakstart').value;
+  var break_end = document.getElementById('breakend').value;
+  
+  google.script.run.withSuccessHandler(update_status).do_ra_duty_generation(calendar_name, ra_list, start_date, end_date, break_start, break_end);
+}
+
+function update_status(output) {
+  var e = document.getElementById('err');
+  var s = document.getElementById('success');
+  var status = JSON.parse(output);
+
+  console.log("Received output: " + output);
+
+  if(!status.status) {
+    e.innerHTML = status.error;
+    e.style.display = 'block';
+} else {
+    var t = document.getElementById('dutytable');
+    
+    t.innerHTML = '';
+    document.getElementById('weeks').innerText = status.week_duties_per_ra;
+    document.getElementById('weekends').innerText = status.weekend_duties_per_ra;
+
+    status.ras.forEach(function(ra) {
+      var r = document.createElement('tr');
+      var td = document.createElement('td');
+      
+      td.innerText = ra.name;
+      r.appendChild(td);
+      td = document.createElement('td');
+      td.innerText = ra.week_primary_duties;
+      r.appendChild(td);
+      td = document.createElement('td');
+      td.innerText = ra.week_secondary_duties;
+      r.appendChild(td);
+      td = document.createElement('td');
+      td.innerText = ra.weekend_primary_duties;
+      r.appendChild(td);
+      td = document.createElement('td');
+      td.innerText = ra.weekend_secondary_duties;
+      r.appendChild(td);
+      t.appendChild(r);
+    });
+
+    s.style.display = 'block';
+  }
+}
+    </script>
+</html>
