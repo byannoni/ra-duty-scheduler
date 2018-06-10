@@ -43,14 +43,16 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
   var ra_objects = ras_list.split('\n').map(create_ra_object);
   var cal = null;
 
-  var weekdays = [];
-  var weekends = [];
+	var date_types = ['week', 'weekend'];
+	var dates = {
+		'week': [],
+		'weekend': []
+	};
   var week_duties_per_ra = 0;
   var weekend_duties_per_ra = 0;
   var week_duties_remainder = 0;
   var weekend_duties_remainder = 0;
   var remaining_duties = 0;
-  var days = [];
   var break_dates_set;
 
   var start_date = null;
@@ -154,81 +156,59 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 
     Logger.log("Counting day '" + date_iter + "'");
 
-    if(is_weekend(date_iter)) {
-      weekends.push(new Date(date_iter));
-    } else {
-      weekdays.push(new Date(date_iter));
-    }
-
-    days.push(new Date(date_iter));
+    if(is_weekend(date_iter))
+      dates['weekend'].push(new Date(date_iter));
+    else
+      dates['week'].push(new Date(date_iter));
   }
 
-  Logger.log((weekends.length + weekdays.length) + " duties from " + start_date + " to " + end_date);
-  Logger.log(days.length + " days in the array: " + JSON.stringify(days));
+	{
+		var days = dates['week'].concat(dates['weekend']).sort();
 
-  // Calculate how many duties each RA gets and the remainder to unfairly assign
-  weekend_duties_per_ra = Math.floor(weekends.length * 2 / ra_objects.length);
-  weekend_duties_remainder = weekends.length * 2 % ra_objects.length;
-  week_duties_per_ra = Math.floor(weekdays.length * 2 / ra_objects.length)
-  week_duties_remainder = weekdays.length * 2 % ra_objects.length;
-
-  Logger.log("Weekends: " + weekends.length + " (" + weekend_duties_per_ra + " per RA with " + weekend_duties_remainder + " remaining)");
-  Logger.log("Weekdays: " + weekdays.length + " (" + week_duties_per_ra + " per RA with " + week_duties_remainder + " remaining)");
-  Logger.log("Assigning duties");
-
-	// Assign weekday duties
-	for(var segment = 0; segment < weekdays.length / ra_objects.length + (weekdays.length / ra_objects.length > 0); ++segment) {
-		var available_primary_ras = ra_objects.slice();
-		var available_secondary_ras = ra_objects.slice();
-		var paired_ras = {};
-
-		while(weekdays.length > 0 && available_primary_ras.length > 0) {
-			var date = weekdays.shift();
-			var primary_index = Math.floor(Math.random() * available_primary_ras.length);
-			var primary_ra = available_primary_ras.splice(Math.floor(Math.random() * available_primary_ras.length), 1)[0];
-			var valid_available_secondary_ras = available_secondary_ras.filter(function(ra) { return ra != primary_ra && (paired_ras[ra.name] != primary_ra.name || available_primary_ras.length == 0); });
-			var secondary_index;
-			var secondary_ra;
-
-			secondary_index = Math.floor(Math.random() * valid_available_secondary_ras.length);
-			secondary_ra = valid_available_secondary_ras[secondary_index];
-			available_secondary_ras.splice(available_secondary_ras.indexOf(secondary_ra), 1);
-
-			Logger.log("Selected RA '" + primary_ra.name + "' for primary on weekday " + date);
-			Logger.log("Selected RA '" + secondary_ra.name + "' for seconday on weekday " + date);
-
-			paired_ras[primary_ra.name] = secondary_ra.name;
-			cal.createAllDayEvent(primary_ra.name + " / " + secondary_ra.name, date);
-			++primary_ra.duty_count['primary']['week'];
-			++secondary_ra.duty_count['secondary']['week'];
-		}
+		Logger.log(days.length + " days with duties from " + start_date + " to " + end_date);
+		Logger.log("Days in the array: " + JSON.stringify(days));
 	}
 
-	// Assign weekend duties
-	for(var segment = 0; segment < weekends.length / ra_objects.length + (weekends.length / ra_objects.length > 0); ++segment) {
-		var available_primary_ras = ra_objects.slice();
-		var available_secondary_ras = ra_objects.slice();
-		var paired_ras = {};
+  // Calculate how many duties each RA gets and the remainder to unfairly assign
+  weekend_duties_per_ra = Math.floor(dates['weekend'].length * 2 / ra_objects.length);
+  weekend_duties_remainder = dates['weekend'].length * 2 % ra_objects.length;
+  week_duties_per_ra = Math.floor(dates['week'].length * 2 / ra_objects.length)
+  week_duties_remainder = dates['week'].length * 2 % ra_objects.length;
 
-		while(weekends.length > 0 && available_primary_ras.length > 0) {
-			var date = weekends.shift();
-			var primary_index = Math.floor(Math.random() * available_primary_ras.length);
-			var primary_ra = available_primary_ras.splice(primary_index, 1)[0];
-			var valid_available_secondary_ras = available_secondary_ras.filter(function(ra) { return ra != primary_ra && (paired_ras[ra.name] != primary_ra.name || available_primary_ras.length == 0); });
-			var secondary_index;
-			var secondary_ra;
+  Logger.log("Weekends: " + dates['weekend'].length + " (" + weekend_duties_per_ra + " per RA with " + weekend_duties_remainder + " remaining)");
+  Logger.log("Weekdays: " + dates['week'].length + " (" + week_duties_per_ra + " per RA with " + week_duties_remainder + " remaining)");
+  Logger.log("Assigning duties");
 
-			secondary_index = Math.floor(Math.random() * valid_available_secondary_ras.length);
-			secondary_ra = valid_available_secondary_ras[secondary_index];
-			available_secondary_ras.splice(available_secondary_ras.indexOf(secondary_ra), 1);
+	// Assign duties
+	for(var date_type = 0; date_type < date_types.length; ++date_type) {
+		// FIXME: Round instead of using this massive line
+		var segments = dates[date_types[date_type]].length / ra_objects.length + (dates[date_types[date_type]].length / ra_objects.length > 0);
 
-			Logger.log("Selected RA '" + primary_ra.name + "' for primary on weekend " + date);
-			Logger.log("Selected RA '" + secondary_ra.name + "' for seconday on weekend " + date);
+		for(var segment = 0; segment < segments; ++segment) {
+			var available_primary_ras = ra_objects.slice();
+			var available_secondary_ras = ra_objects.slice();
+			var paired_ras = {};
 
-			paired_ras[primary_ra.name] = secondary_ra.name;
-			cal.createAllDayEvent(primary_ra.name + " / " + secondary_ra.name, date);
-			++primary_ra.duty_count['primary']['weekend'];
-			++secondary_ra.duty_count['secondary']['weekend'];
+			while(dates[date_types[date_type]].length > 0 && available_primary_ras.length > 0) {
+				var date = dates[date_types[date_type]].shift();
+				var primary_index = Math.floor(Math.random() * available_primary_ras.length);
+				var primary_ra = available_primary_ras.splice(Math.floor(Math.random() * available_primary_ras.length), 1)[0];
+				var valid_available_secondary_ras = available_secondary_ras.filter(function(ra) { return ra != primary_ra && (paired_ras[ra.name] != primary_ra.name || available_primary_ras.length == 0); });
+				var secondary_index;
+				var secondary_ra;
+
+				secondary_index = Math.floor(Math.random() * valid_available_secondary_ras.length);
+				secondary_ra = valid_available_secondary_ras[secondary_index];
+				available_secondary_ras.splice(available_secondary_ras.indexOf(secondary_ra), 1);
+
+				Logger.log("Selected RA '" + primary_ra.name + "' for primary on " + date);
+				Logger.log("Selected RA '" + secondary_ra.name + "' for seconday on " + date);
+
+				paired_ras[primary_ra.name] = secondary_ra.name;
+				cal.createAllDayEvent(primary_ra.name + " / " + secondary_ra.name, date);
+				++primary_ra.duty_count['primary'][date_types[date_type]];
+				++secondary_ra.duty_count['secondary'][date_types[date_type]];
+			}
 		}
 	}
 
