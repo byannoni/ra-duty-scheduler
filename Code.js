@@ -35,28 +35,6 @@ function is_valid_date(date)
   return date && !isNaN(Date.parse(date));
 }
 
-function get_least_overworked_ras(ras, role, day_type, exclude) {
-	var ret = [];
-	var min_duties;
-
-	ras = ras.filter(function(ra) { return ! ra in exclude; });
-
-	for(var i = 0; i < ras.length; ++i) {
-		var duties = ras[i].duty_count[role][day_type];
-
-		if(duties <= min_duties) {
-			if(duties < min_duties)
-				min_duties = duties;
-			else
-				ret = ret.filter(function(ra) { return ra.duty_count[role][day_type] > min_duties; });
-
-			ret.push(ras[i]);
-		}
-	}
-
-	return ret;
-}
-
 function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
     end_date_arg, break_start_arg, break_end_arg)
 {
@@ -212,9 +190,6 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 			var secondary_index;
 			var secondary_ra;
 
-			if(available_primary_ras.length == 0 && valid_available_secondary_ras == 0)
-				valid_available_secondary_ras = get_least_overworked_ras(ra_objects, 'secondary', 'week', [primary_ra]).filter(function(ra) { return paired_ras[ra.name] != primary_ra.name || available_primary_ras.length == 0; });
-
 			secondary_index = Math.floor(Math.random() * valid_available_secondary_ras.length);
 			secondary_ra = valid_available_secondary_ras[secondary_index];
 			available_secondary_ras.splice(available_secondary_ras.indexOf(secondary_ra), 1);
@@ -242,9 +217,6 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 			var valid_available_secondary_ras = available_secondary_ras.filter(function(ra) { return ra != primary_ra && (paired_ras[ra.name] != primary_ra.name || available_primary_ras.length == 0); });
 			var secondary_index;
 			var secondary_ra;
-
-			if(available_primary_ras.length == 0 && valid_available_secondary_ras == 0)
-				valid_available_secondary_ras = get_least_overworked_ras(ra_objects, 'secondary', 'week', [primary_ra]).filter(function(ra) { return paired_ras[ra.name] != primary_ra.name || available_primary_ras.length == 0; });
 
 			secondary_index = Math.floor(Math.random() * valid_available_secondary_ras.length);
 			secondary_ra = valid_available_secondary_ras[secondary_index];
