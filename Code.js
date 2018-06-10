@@ -199,23 +199,30 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
   Logger.log("Assigning duties");
 
 	// Assign weekday duties
-	for(var segment = 0; segment < weekdays.length / ra_objects.length; ++segment) {
+	for(var segment = 0; segment < weekdays.length / ra_objects.length + (weekdays.length / ra_objects.length > 0); ++segment) {
 		var available_primary_ras = ra_objects.slice();
 		var available_secondary_ras = ra_objects.slice();
+		var paired_ras = {};
 
 		while(weekdays.length > 0 && available_primary_ras.length > 0) {
 			var date = weekdays.shift();
+			var primary_index = Math.floor(Math.random() * available_primary_ras.length);
 			var primary_ra = available_primary_ras.splice(Math.floor(Math.random() * available_primary_ras.length), 1)[0];
-			var valid_available_secondary_ras = available_secondary_ras.filter(function(ra) { return ra !== primary_ra; });
-			var secondary_ra = valid_available_secondary_ras[Math.floor(Math.random() * valid_available_secondary_ras.length)];
+			var valid_available_secondary_ras = available_secondary_ras.filter(function(ra) { return ra != primary_ra && (paired_ras[ra.name] != primary_ra.name || available_primary_ras.length == 0); });
+			var secondary_index;
+			var secondary_ra;
 
-			Logger.log("Available secondary RAs: " + JSON.stringify(valid_available_secondary_ras, undefined, 2));
+			if(available_primary_ras.length == 0 && valid_available_secondary_ras == 0)
+				valid_available_secondary_ras = get_least_overworked_ras(ra_objects, 'secondary', 'week', [primary_ra]).filter(function(ra) { return paired_ras[ra.name] != primary_ra.name || available_primary_ras.length == 0; });
 
+			secondary_index = Math.floor(Math.random() * valid_available_secondary_ras.length);
+			secondary_ra = valid_available_secondary_ras[secondary_index];
 			available_secondary_ras.splice(available_secondary_ras.indexOf(secondary_ra), 1);
 
 			Logger.log("Selected RA '" + primary_ra.name + "' for primary on weekday " + date);
 			Logger.log("Selected RA '" + secondary_ra.name + "' for seconday on weekday " + date);
 
+			paired_ras[primary_ra.name] = secondary_ra.name;
 			cal.createAllDayEvent(primary_ra.name + " / " + secondary_ra.name, date);
 			++primary_ra.duty_count['primary']['week'];
 			++secondary_ra.duty_count['secondary']['week'];
@@ -223,23 +230,30 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 	}
 
 	// Assign weekend duties
-	for(var segment = 0; segment < weekends.length / ra_objects.length; ++segment) {
+	for(var segment = 0; segment < weekends.length / ra_objects.length + (weekends.length / ra_objects.length > 0); ++segment) {
 		var available_primary_ras = ra_objects.slice();
 		var available_secondary_ras = ra_objects.slice();
+		var paired_ras = {};
 
 		while(weekends.length > 0 && available_primary_ras.length > 0) {
 			var date = weekends.shift();
-			var primary_ra = available_primary_ras.splice(Math.floor(Math.random() * available_primary_ras.length), 1)[0];
-			var valid_available_secondary_ras = available_secondary_ras.filter(function(ra) { return ra !== primary_ra; });
-			var secondary_ra = valid_available_secondary_ras[Math.floor(Math.random() * available_secondary_ras.length)];
+			var primary_index = Math.floor(Math.random() * available_primary_ras.length);
+			var primary_ra = available_primary_ras.splice(primary_index, 1)[0];
+			var valid_available_secondary_ras = available_secondary_ras.filter(function(ra) { return ra != primary_ra && (paired_ras[ra.name] != primary_ra.name || available_primary_ras.length == 0); });
+			var secondary_index;
+			var secondary_ra;
 
-			Logger.log("Available secondary RAs: " + JSON.stringify(valid_available_secondary_ras, undefined, 2));
+			if(available_primary_ras.length == 0 && valid_available_secondary_ras == 0)
+				valid_available_secondary_ras = get_least_overworked_ras(ra_objects, 'secondary', 'week', [primary_ra]).filter(function(ra) { return paired_ras[ra.name] != primary_ra.name || available_primary_ras.length == 0; });
 
+			secondary_index = Math.floor(Math.random() * valid_available_secondary_ras.length);
+			secondary_ra = valid_available_secondary_ras[secondary_index];
 			available_secondary_ras.splice(available_secondary_ras.indexOf(secondary_ra), 1);
 
 			Logger.log("Selected RA '" + primary_ra.name + "' for primary on weekend " + date);
 			Logger.log("Selected RA '" + secondary_ra.name + "' for seconday on weekend " + date);
 
+			paired_ras[primary_ra.name] = secondary_ra.name;
 			cal.createAllDayEvent(primary_ra.name + " / " + secondary_ra.name, date);
 			++primary_ra.duty_count['primary']['weekend'];
 			++secondary_ra.duty_count['secondary']['weekend'];
