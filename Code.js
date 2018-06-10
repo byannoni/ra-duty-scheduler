@@ -10,10 +10,16 @@ function create_ra_object(name)
   Logger.log("Creating object for RA '" + name + "'");
   return {
     name: name,
-    week_primary_duties: 0,
-    weekend_primary_duties: 0,
-    week_secondary_duties: 0,
-    weekend_secondary_duties: 0,
+		duty_count: {
+			'primary': {
+				'week': 0,
+				'weekend': 0
+			},
+			'secondary': {
+				'week': 0,
+				'weekend': 0
+			}
+		}
   };
 }
 
@@ -27,6 +33,28 @@ function is_valid_date(date)
 {
   Logger.log("Call to is_valid_date() with '" + date + "'");
   return date && !isNaN(Date.parse(date));
+}
+
+function get_least_overworked_ras(ras, role, day_type, exclude) {
+	var ret = [];
+	var min_duties;
+
+	ras = ras.filter(function(ra) { return ! ra in exclude; });
+
+	for(var i = 0; i < ras.length; ++i) {
+		var duties = ras[i].duty_count[role][day_type];
+
+		if(duties <= min_duties) {
+			if(duties < min_duties)
+				min_duties = duties;
+			else
+				ret = ret.filter(function(ra) { return ra.duty_count[role][day_type] > min_duties; });
+
+			ret.push(ras[i]);
+		}
+	}
+
+	return ret;
 }
 
 function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
@@ -189,8 +217,8 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 			Logger.log("Selected RA '" + secondary_ra.name + "' for seconday on weekday " + date);
 
 			cal.createAllDayEvent(primary_ra.name + " / " + secondary_ra.name, date);
-			++primary_ra.week_primary_duties;
-			++secondary_ra.week_secondary_duties;
+			++primary_ra.duty_count['primary']['week'];
+			++secondary_ra.duty_count['secondary']['week'];
 		}
 	}
 
@@ -213,8 +241,8 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 			Logger.log("Selected RA '" + secondary_ra.name + "' for seconday on weekend " + date);
 
 			cal.createAllDayEvent(primary_ra.name + " / " + secondary_ra.name, date);
-			++primary_ra.weekend_primary_duties;
-			++secondary_ra.weekend_secondary_duties;
+			++primary_ra.duty_count['primary']['weekend'];
+			++secondary_ra.duty_count['secondary']['weekend'];
 		}
 	}
 

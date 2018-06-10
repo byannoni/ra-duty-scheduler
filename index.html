@@ -223,7 +223,7 @@ function update_status(output) {
   if(!status.status) {
     e.innerHTML = status.error;
     e.style.display = 'block';
-	} else {
+  } else {
     var t = document.getElementById('dutytable');
 
     t.innerHTML = '';
@@ -237,16 +237,16 @@ function update_status(output) {
       td.innerText = ra.name;
       r.appendChild(td);
       td = document.createElement('td');
-      td.innerText = ra.week_primary_duties;
+      td.innerText = ra.duty_count['primary']['week'];
       r.appendChild(td);
       td = document.createElement('td');
-      td.innerText = ra.week_secondary_duties;
+      td.innerText = ra.duty_count['secondary']['week'];
       r.appendChild(td);
       td = document.createElement('td');
-      td.innerText = ra.weekend_primary_duties;
+      td.innerText = ra.duty_count['primary']['weekend'];
       r.appendChild(td);
       td = document.createElement('td');
-      td.innerText = ra.weekend_secondary_duties;
+      td.innerText = ra.duty_count['secondary']['weekend'];
       r.appendChild(td);
       t.appendChild(r);
     });
@@ -254,5 +254,5 @@ function update_status(output) {
     s.style.display = 'block';
   }
 }
-	</script>
+  </script>
 </html>
