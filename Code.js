@@ -35,6 +35,14 @@ function is_valid_date(date)
 	return date && !isNaN(Date.parse(date));
 }
 
+function create_duty_object(date, ras)
+{
+	return {
+		date : new Date(date),
+		ras : ras.slice(0),
+	};
+}
+
 function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 		end_date_arg, break_start_arg, break_end_arg)
 {
@@ -59,6 +67,8 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 	var end_date = null;
 	var break_start = null;
 	var break_end = null;
+
+	var final_duties = [];
 
 	Logger.log("Validating dates");
 
@@ -227,13 +237,17 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 						+ date);
 
 				paired_ras[primary_ra.name] = secondary_ra.name;
-				cal.createAllDayEvent(primary_ra.name + " / " + secondary_ra.name,
-						date);
+				final_duties.push(create_duty_object(date,
+						[primary_ra.name, secondary_ra.name]));
 				++primary_ra.duty_count['primary'][date_types[date_type]];
 				++secondary_ra.duty_count['secondary'][date_types[date_type]];
 			}
 		}
 	}
+
+	for(var duty_iter = 0; duty_iter < final_duties.length; ++duty_iter)
+		cal.createAllDayEvent(final_duties[duty_iter].ras.join(' / '),
+				final_duties[duty_iter].date);
 
 	Logger.log("Done");
 
