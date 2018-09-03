@@ -245,15 +245,28 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 		}
 	}
 
+	console.time("Time before API flood error");
+
 	for(var duty_iter = 0; duty_iter < final_duties.length; ++duty_iter)
 	{
-		cal.createAllDayEvent(final_duties[duty_iter].ras.join(' / '),
-				final_duties[duty_iter].date);
+		var event_created = false;
 
-		if(duty_iter % 10 == 9)
-			Utilities.sleep(1000);
+		do {
+			try {
+				cal.createAllDayEvent(final_duties[duty_iter].ras.join(' / '),
+						final_duties[duty_iter].date);
+				event_created = true;
+			} catch(e) {
+				console.timeEnd("Time before API flood error");
+				console.warn(e);
+				console.log("Caught error on iteration " + duty_iter);
+				Utilities.sleep(1000);
+				console.time("Time before API flood error");
+			}
+		} while (!event_created);
 	}
 
+	console.timeEnd("Time before API flood error");
 	console.info("Done");
 
 	return JSON.stringify({
