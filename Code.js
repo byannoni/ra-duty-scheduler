@@ -1,13 +1,13 @@
 
 function doGet()
 {
-	Logger.log('Serving home page');
+	console.log('Serving home page');
 	return HtmlService.createHtmlOutputFromFile('index');
 }
 
 function create_ra_object(name)
 {
-	Logger.log("Creating object for RA '" + name + "'");
+	console.log("Creating object for RA '" + name + "'");
 	return {
 		name: name,
 		duty_count: {
@@ -31,7 +31,7 @@ function is_weekend(date)
 
 function is_valid_date(date)
 {
-	Logger.log("Call to is_valid_date() with '" + date + "'");
+	console.log("Call to is_valid_date() with '" + date + "'");
 	return date && !isNaN(Date.parse(date));
 }
 
@@ -46,7 +46,7 @@ function create_duty_object(date, ras)
 function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 		end_date_arg, break_start_arg, break_end_arg)
 {
-	Logger.log("Querying calendars for '" + calendar_name + "'");
+	console.log("Querying calendars for '" + calendar_name + "'");
 	var calendar_list = CalendarApp.getCalendarsByName(calendar_name);
 	var ra_objects = ras_list.split('\n').map(create_ra_object);
 	var cal = null;
@@ -70,7 +70,7 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 
 	var final_duties = [];
 
-	Logger.log("Validating dates");
+	console.info("Validating dates");
 
 	if(is_valid_date(break_start_arg)) {
 		break_start = new Date(break_start_arg);
@@ -101,7 +101,7 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 		end_date = new Date(end_date_arg);
 	}
 
-	Logger.log("Checking that the break was not only partially specified");
+	console.log("Checking that the break was not only partially specified");
 
 	if(is_valid_date(break_start_arg) != is_valid_date(break_end_arg)) {
 		return JSON.stringify({
@@ -110,7 +110,7 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 		});
 	}
 
-	Logger.log("Checking that the semester start date is before the end date");
+	console.log("Checking that the semester start date is before the end date");
 
 	if(start_date.getTime() > end_date.getTime()) {
 		return JSON.stringify({
@@ -121,7 +121,7 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 
 	if(break_dates_set) {
 		// Check that the break is during semester
-		Logger.log("Checking that the break is during the semester");
+		console.log("Checking that the break is during the semester");
 
 		if(break_start.getTime() < start_date.getTime()
 				|| break_start.getTime() > end_date.getTime()
@@ -133,7 +133,7 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 			});
 		}
 
-		Logger.log("Checking that the break starts before it ends");
+		console.log("Checking that the break starts before it ends");
 
 		if(break_start.getTime() > break_end.getTime()) {
 			return JSON.stringify({
@@ -143,7 +143,7 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 		}
 	}
 
-	Logger.log("Checking calendar '" + calendar_name + "' exists");
+	console.log("Checking calendar '" + calendar_name + "' exists");
 	// Make sure a calendar exists with the given name
 	if(calendar_list.length < 1) {
 		return JSON.stringify({
@@ -152,22 +152,22 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 		});
 	}
 
-	Logger.log("Getting first calendar in list");
+	console.log("Getting first calendar in list");
 	// Just grab the first calendar with the given name
 	cal = calendar_list[0];
 
-	Logger.log("Calculating how many duties should be given");
+	console.info("Calculating how many duties should be given");
 	// Calculate how many week and weekend duties are needed
 	for(var date_iter = new Date(start_date); date_iter <= end_date;
 			date_iter.setDate(date_iter.getDate() + 1)) {
 		// Skip days during the break
 		if(break_dates_set && date_iter >= break_start
 				&& date_iter <= break_end) {
-			Logger.log("Day '" + date_iter + "' is during break");
+			console.log("Day '" + date_iter + "' is during break");
 			continue;
 		}
 
-		Logger.log("Counting day '" + date_iter + "'");
+		console.log("Counting day '" + date_iter + "'");
 
 		if(is_weekend(date_iter))
 			dates['weekend'].push(new Date(date_iter));
@@ -178,9 +178,9 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 	{
 		var days = dates['week'].concat(dates['weekend']).sort();
 
-		Logger.log(days.length + " days with duties from " + start_date + " to "
+		console.log(days.length + " days with duties from " + start_date + " to "
 				+ end_date);
-		Logger.log("Days in the array: " + JSON.stringify(days));
+		console.log("Days in the array: " + JSON.stringify(days));
 	}
 
 	/*
@@ -193,12 +193,12 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 	week_duties_per_ra = Math.floor(dates['week'].length * 2 / ra_objects.length)
 	week_duties_remainder = dates['week'].length * 2 % ra_objects.length;
 
-	Logger.log("Weekends: " + dates['weekend'].length + " ("
+	console.log("Weekends: " + dates['weekend'].length + " ("
 			+ weekend_duties_per_ra + " per RA with " + weekend_duties_remainder
 			+ " remaining)");
-	Logger.log("Weekdays: " + dates['week'].length + " (" + week_duties_per_ra
+	console.log("Weekdays: " + dates['week'].length + " (" + week_duties_per_ra
 			+ " per RA with " + week_duties_remainder + " remaining)");
-	Logger.log("Assigning duties");
+	console.info("Assigning duties");
 
 	// Assign duties
 	for(var date_type = 0; date_type < date_types.length; ++date_type) {
@@ -231,9 +231,9 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 				avail_secondary_ras.splice(avail_secondary_ras.indexOf(secondary_ra),
 						1);
 
-				Logger.log("Selected RA '" + primary_ra.name + "' for primary on "
+				console.log("Selected RA '" + primary_ra.name + "' for primary on "
 						+ date);
-				Logger.log("Selected RA '" + secondary_ra.name + "' for seconday on "
+				console.log("Selected RA '" + secondary_ra.name + "' for seconday on "
 						+ date);
 
 				paired_ras[primary_ra.name] = secondary_ra.name;
@@ -246,10 +246,15 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 	}
 
 	for(var duty_iter = 0; duty_iter < final_duties.length; ++duty_iter)
+	{
 		cal.createAllDayEvent(final_duties[duty_iter].ras.join(' / '),
 				final_duties[duty_iter].date);
 
-	Logger.log("Done");
+		if(duty_iter % 10 == 9)
+			Utilities.sleep(1000);
+	}
+
+	console.info("Done");
 
 	return JSON.stringify({
 		status : true,
