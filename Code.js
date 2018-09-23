@@ -79,9 +79,18 @@ function create_duty_object(date, ras)
 	};
 }
 
+var seed = 1;
+
+function random() {
+	var x = Math.sin(seed++) * 10000;
+	return x - Math.floor(x);
+}
+
 function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 		end_date_arg, break_start_arg, break_end_arg)
 {
+	seed = Math.floor(Math.random() * 2147483647);
+	console.log("Seeding the PRNG: " + seed);
 	console.log("Querying calendars for '" + calendar_name + "'");
 	var calendar_list = CalendarApp.getCalendarsByName(calendar_name);
 	var ra_objects = ras_list.split('\n').map(create_ra_object);
@@ -255,9 +264,8 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 			while(dates[date_types[date_type]].length > 0
 					&& avail_primary_ras.length > 0) {
 				var date = dates[date_types[date_type]].shift();
-				var primary_index = Math.floor(Math.random()
-						* avail_primary_ras.length);
-				var primary_ra = avail_primary_ras.splice(Math.floor(Math.random()
+				var primary_index = Math.floor(random() * avail_primary_ras.length);
+				var primary_ra = avail_primary_ras.splice(Math.floor(random()
 						* avail_primary_ras.length), 1)[0];
 				var valid_avail_secondary_ras =
 						avail_secondary_ras.filter(function(ra) {
@@ -267,7 +275,7 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 				var secondary_index;
 				var secondary_ra;
 
-				secondary_index = Math.floor(Math.random()
+				secondary_index = Math.floor(random()
 						* valid_avail_secondary_ras.length);
 				console.log("Selected secondary RA index " + secondary_index
 						+ " out of " + valid_avail_secondary_ras.length
