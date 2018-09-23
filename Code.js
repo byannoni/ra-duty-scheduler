@@ -250,7 +250,7 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 		var segments = Math.ceil(dates[date_types[date_type]].length
 				/ ra_objects.length);
 
-		console.log("Segments for date type '" + date_types[date_type] + "': '"
+		console.log("Segments for date type '" + date_types[date_type] + "': "
 				+ segments);
 
 		for(var segment = 0; segment < segments; ++segment) {
