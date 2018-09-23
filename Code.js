@@ -241,10 +241,16 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 		var segments = Math.ceil(dates[date_types[date_type]].length
 				/ ra_objects.length);
 
+		console.log("Segments for date type '" + date_types[date_type] + "': '"
+				+ segments);
+
 		for(var segment = 0; segment < segments; ++segment) {
 			var avail_primary_ras = ra_objects.slice();
 			var avail_secondary_ras = ra_objects.slice();
 			var paired_ras = {};
+
+			console.log("Assigning for '" + date_types[date_type] + "' segment "
+					+ segment);
 
 			while(dates[date_types[date_type]].length > 0
 					&& avail_primary_ras.length > 0) {
@@ -263,6 +269,9 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 
 				secondary_index = Math.floor(Math.random()
 						* valid_avail_secondary_ras.length);
+				console.log("Selected secondary RA index " + secondary_index
+						+ " out of " + valid_avail_secondary_ras.length
+						+ " total valid availible secondary RAs");
 				secondary_ra = valid_avail_secondary_ras[secondary_index];
 				avail_secondary_ras.splice(avail_secondary_ras.indexOf(secondary_ra),
 						1);
