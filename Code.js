@@ -1,4 +1,40 @@
 
+function debug_do_ra_duty_generation()
+{
+	var start = '2019-01-18';
+	var end = '2019-05-11';
+	var break_start = '2019-03-09';
+	var break_end = '2019-03-17';
+	var ra_list = [
+		'RA 01',
+		'RA 02',
+		'RA 03',
+		'RA 04',
+		'RA 05',
+		'RA 06',
+		'RA 07',
+		'RA 08',
+		'RA 09',
+		'RA 10',
+		'RA 11',
+		'RA 12',
+		'RA 13',
+		'RA 14',
+		'RA 15',
+		'RA 16',
+		'RA 17',
+		'RA 20',
+		'RA 21',
+		'RA 22',
+		'RA 23',
+		'RA 24'
+	].join('\n');
+
+	var ret = do_ra_duty_generation('RA Test', ra_list, start, end, break_start, break_end);
+
+	ret;
+}
+
 function doGet()
 {
 	console.log('Serving home page');
