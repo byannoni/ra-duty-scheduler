@@ -83,7 +83,7 @@ function create_duty_object(date, ras)
 	};
 }
 
-var seed = 1;
+var seed = Math.floor(Math.random() * 2147483647);
 
 function random() {
 	var x = Math.sin(seed++) * 10000;
@@ -93,8 +93,7 @@ function random() {
 function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 		end_date_arg, break_start_arg, break_end_arg)
 {
-	seed = Math.floor(Math.random() * 2147483647);
-	console.log("Seeding the PRNG: " + seed);
+	console.log("Using PRNG seed: " + seed);
 	console.log("Querying calendars for '" + calendar_name + "'");
 	var calendar_list = CalendarApp.getCalendarsByName(calendar_name);
 	var ra_objects = ras_list.split('\n').map(create_ra_object);
