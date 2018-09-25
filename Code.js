@@ -23,14 +23,18 @@ function debug_do_ra_duty_generation()
 		'RA 15',
 		'RA 16',
 		'RA 17',
+		'RA 18',
+		'RA 19',
 		'RA 20',
 		'RA 21',
 		'RA 22',
 		'RA 23',
 		'RA 24'
 	].join('\n');
+	var ret = '';
 
-	var ret = do_ra_duty_generation('RA Test', ra_list, start, end, break_start, break_end);
+	seed = 168249181;
+	ret = do_ra_duty_generation('RA Test', ra_list, start, end, break_start, break_end);
 
 	ret;
 }
