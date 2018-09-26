@@ -259,7 +259,7 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 		for(var segment = 0; segment < segments; ++segment) {
 			var avail_primary_ras = ra_objects.slice();
 			var avail_secondary_ras = ra_objects.slice();
-			var paired_ras = {};
+			var segment_duties = [];
 
 			console.log("Assigning for '" + date_types[date_type] + "' segment "
 					+ segment);
@@ -267,17 +267,29 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 			while(dates[date_types[date_type]].length > 0
 					&& avail_primary_ras.length > 0) {
 				var date = dates[date_types[date_type]].shift();
-				var primary_index = Math.floor(random() * avail_primary_ras.length);
 				var primary_ra = avail_primary_ras.splice(Math.floor(random()
 						* avail_primary_ras.length), 1)[0];
-				var valid_avail_secondary_ras =
-						avail_secondary_ras.filter(function(ra) {
-							return ra != primary_ra && (paired_ras[ra.name] != primary_ra.name
-									|| avail_primary_ras.length == 0);
-						});
+				var valid_avail_secondary_ras;
 				var secondary_index;
 				var secondary_ra;
 
+				if(avail_primary_ras.length == 0
+						&& avail_secondary_ras[0] == primary_ra) {
+					var swap_index = Math.floor(random() * segment_duties.length);
+					var swapped_ra = segment_duties[swap_index].ras[1];
+
+					console.log("RA '" + primary_ra.name
+							+ "' was left out. Swapping with RA '" + swapped_ra.name
+							+ "' on " + segment_duties[swap_index].date);
+					segment_duties[swap_index].ras[1] = primary_ra;
+					++primary_ra.duty_count['secondary'][date_types[date_type]];
+					--swapped_ra.duty_count['secondary'][date_types[date_type]];
+					avail_secondary_ras[0] = swapped_ra;
+				}
+
+				valid_avail_secondary_ras = avail_secondary_ras.filter(function(ra) {
+							return ra != primary_ra;
+						});
 				secondary_index = Math.floor(random()
 						* valid_avail_secondary_ras.length);
 				console.log("Selected secondary RA index " + secondary_index
@@ -292,12 +304,12 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 				console.log("Selected RA '" + secondary_ra.name + "' for seconday on "
 						+ date);
 
-				paired_ras[primary_ra.name] = secondary_ra.name;
-				final_duties.push(create_duty_object(date,
-						[primary_ra.name, secondary_ra.name]));
+				segment_duties.push(create_duty_object(date, [primary_ra, secondary_ra]));
 				++primary_ra.duty_count['primary'][date_types[date_type]];
 				++secondary_ra.duty_count['secondary'][date_types[date_type]];
 			}
+
+			final_duties = final_duties.concat(segment_duties);
 		}
 	}
 
@@ -309,8 +321,9 @@ function do_ra_duty_generation(calendar_name, ras_list, start_date_arg,
 
 		do {
 			try {
-				cal.createAllDayEvent(final_duties[duty_iter].ras.join(' / '),
-						final_duties[duty_iter].date);
+				cal.createAllDayEvent(final_duties[duty_iter].ras.map(function(ra) {
+							return ra.name;
+						}).join(' / '), final_duties[duty_iter].date);
 				event_created = true;
 			} catch(e) {
 				console.timeEnd("Time before API flood error");
